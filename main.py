@@ -18,18 +18,51 @@ def get_encoded_faces():
 
     return encoded
 
-encodeListKnown = get_encoded_faces()
-cap = cv2.VideoCapture(0)
-face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+def get_optimal_font_scale(text, width):
+    for scale in reversed(range(0, 60, 1)):
+        textSize = cv2.getTextSize(text, fontFace=cv2.FONT_HERSHEY_DUPLEX, fontScale=scale/10, thickness=1)
+        new_width = textSize[0][0]
+        if (new_width <= width):
+            return scale/13
+    return 1
 
+
+faces = get_encoded_faces()
+faces_encoded = list(faces.values())
+known_face_names = list(faces.keys())
+
+cap = cv2.VideoCapture(0)
 
 while True:
     ret, frame = cap.read()
+    frameS = cv2.resize(frame, (0,0), None, fx = 0.25, fy = 0.25)
+    # frameS = cv2.cvtColor(frameS, cv2.COLOR_BGR2RGB)
 
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    faces = face_cascade.detectMultiScale(gray, 1.3, 5)
-    for (x, y, w, h) in faces:
-        cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+    facesCurrFrame = fr.face_locations(frameS)
+    encodesCurrFrame = fr.face_encodings(frameS, facesCurrFrame)
+
+    face_names = []
+    for encodeFace,faceLoc in zip(encodesCurrFrame, facesCurrFrame):
+        name = "Unknown"
+        matches = fr.compare_faces(faces_encoded, encodeFace)
+        face_distances = fr.face_distance(faces_encoded, encodeFace)
+        best_match_index = np.argmin(face_distances)
+
+        if matches[best_match_index]:
+            name = known_face_names[best_match_index].upper()
+
+        face_names.append(name)
+        for (top, right, bottom, left), name in zip(facesCurrFrame, face_names):
+            top, right, bottom, left = top*4, right*4, bottom*4, left*4
+            # Draw a box around the face
+            cv2.rectangle(frame, (left-20, top-20), (right+20, bottom+20), (255, 0, 0), 2)
+
+            #Draw label
+            cv2.rectangle(frame, (left-20, bottom-15), (right+20, bottom+20), (255,0,0), cv2.FILLED)
+            font = cv2.FONT_HERSHEY_DUPLEX
+
+            cv2.putText(frame, name, (left-20, bottom+15), font, get_optimal_font_scale(name, right-left+40), (255,255,255), 2)
+
 
     cv2.imshow('frame', frame)
     if cv2.waitKey(1) == ord('q'):
