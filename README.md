@@ -1,5 +1,5 @@
 # Real Time Face Recognition
-* Note: Since I can't figure out a way to use google colab to open user camera, I will use the dectection algorithm on the image that you'll have to take.
+* Note: Since I can't figure out a way to use google colab to open user camera, I will use the dectection algorithm on the image instead.
 
 Link: https://colab.research.google.com/drive/1EyKJAlaSbEASWjszR8PDcLk4Q8rtzfm2?usp=sharing
 
